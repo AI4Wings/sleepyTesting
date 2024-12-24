@@ -1,6 +1,6 @@
 # sleepyTesting
 
-A LLM-driven UI testing framework that utilizes multi-agent systems to plan and execute mobile UI tasks.
+A LLM-driven UI testing framework that utilizes multi-agent systems to plan and execute mobile/web UI tasks.
 
 ## Features
 
