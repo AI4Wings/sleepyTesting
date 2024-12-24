@@ -27,6 +27,40 @@ class TaskDecomposer:
         """Initialize with optional LLM client"""
         self.llm_client = llm_client
 
+    def parse_device_id(self, text: str, platform: str) -> Optional[str]:
+        """Parse device ID from text for a specific platform.
+
+        Args:
+            text: Text to parse device ID from
+            platform: Platform type ('android' or 'ios')
+
+        Returns:
+            Device ID if found, otherwise None
+
+        Example:
+            parse_device_id("在Android设备A123上发送短信", "android") -> "A123"
+            parse_device_id("Send SMS on iOS device B456", "ios") -> "B456"
+        """
+        # Check for Chinese device identifier
+        if "设备" in text:
+            parts = text.split("设备")
+            if len(parts) > 1:
+                matches = re.findall(r'([A-Za-z0-9]+)', parts[1])
+                if matches:
+                    return matches[0]
+
+        # Check for English device identifier
+        if "device" in text.lower():
+            parts = text.lower().split("device")
+            if len(parts) > 1:
+                matches = re.findall(r'([A-Za-z0-9]+)', parts[1])
+                if matches:
+                    return matches[0]
+
+        # Get default from environment
+        env_var = f"SLEEPYTESTING_{platform.upper()}_DEVICE"
+        return os.getenv(env_var, f"default-{platform}")
+
     def decompose_task(self, task_description: str) -> List[UIStep]:
         """
         Decompose a high-level task description into specific UI steps
@@ -49,35 +83,13 @@ class TaskDecomposer:
         subtasks = [s.strip() for s in task_description.split('，')]
         
         for subtask in subtasks:
-            # Platform and device detection
+            # Platform detection
             platform = None
-            device_id = None
             
-            # Check for Android platform and device
+            # Check for Android platform
             if "Android" in subtask or "安卓" in subtask:
                 platform = "android"
-                # Look for device ID patterns
-                if "设备" in subtask:
-                    # Extract ID after "设备"
-                    parts = subtask.split("设备")
-                    if len(parts) > 1:
-                        # Extract alphanumeric ID
-                        import re
-                        matches = re.findall(r'([A-Za-z0-9]+)', parts[1])
-                        if matches:
-                            device_id = matches[0]
-                elif "device" in subtask.lower():
-                    # Extract ID after "device"
-                    parts = subtask.lower().split("device")
-                    if len(parts) > 1:
-                        # Extract alphanumeric ID
-                        import re
-                        matches = re.findall(r'([A-Za-z0-9]+)', parts[1])
-                        if matches:
-                            device_id = matches[0]
-                
-                # Default device ID if none specified
-                device_id = device_id or os.getenv("SLEEPYTESTING_ANDROID_DEVICE", "default-android")
+                device_id = self.parse_device_id(subtask, platform)
                 
                 # Create Android step
                 steps.append(UIStep(
@@ -87,30 +99,10 @@ class TaskDecomposer:
                     description=f"Perform action on Android device {device_id}"
                 ))
             
-            # Check for iOS platform and device
+            # Check for iOS platform
             elif "iOS" in subtask or "苹果" in subtask:
                 platform = "ios"
-                # Look for device ID patterns
-                if "设备" in subtask:
-                    parts = subtask.split("设备")
-                    if len(parts) > 1:
-                        # Extract alphanumeric ID
-                        import re
-                        matches = re.findall(r'([A-Za-z0-9]+)', parts[1])
-                        if matches:
-                            device_id = matches[0]
-                elif "device" in subtask.lower():
-                    parts = subtask.lower().split("device")
-                    if len(parts) > 1:
-                        # Extract alphanumeric ID
-                        import re
-                        matches = re.findall(r'([A-Za-z0-9]+)', parts[1])
-                        if matches:
-                            device_id = matches[0]
-                
-                # Default device ID if none specified
-                device_id = device_id or os.getenv("SLEEPYTESTING_IOS_DEVICE", "default-ios")
-                
+                device_id = self.parse_device_id(subtask, platform)
                 
                 # Create iOS step
                 steps.append(UIStep(

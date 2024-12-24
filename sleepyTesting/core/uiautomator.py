@@ -5,9 +5,10 @@ import uiautomator2 as u2
 from typing import Optional, Tuple, Any
 from .driver_interface import BaseDriver
 
+
 class UIAutomatorDriver(BaseDriver):
     """Android UI Automator2 driver implementation"""
-    
+
     def connect(self, device_identifier: Optional[str] = None) -> None:
         """
         Connect to an Android device
@@ -15,9 +16,16 @@ class UIAutomatorDriver(BaseDriver):
         Args:
             device_identifier: Optional device serial number
         """
-        self.device = u2.connect(device_identifier) if device_identifier else u2.connect()
-        
-    def click(self, element_id: Optional[str] = None, coordinates: Optional[Tuple[int, int]] = None) -> None:
+        self.device = (u2.connect(device_identifier) 
+                      if device_identifier 
+                      else u2.connect())
+
+
+    def click(
+        self,
+        element_id: Optional[str] = None,
+        coordinates: Optional[Tuple[int, int]] = None
+    ) -> None:
         """
         Click on an element or coordinates
         

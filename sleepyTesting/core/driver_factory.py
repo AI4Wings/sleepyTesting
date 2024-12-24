@@ -37,7 +37,8 @@ def get_driver() -> BaseDriver:
         framework_drivers = PLATFORM_DRIVERS[PLATFORM]
     except KeyError:
         raise ValueError(f"Unsupported platform: {PLATFORM}")
-        
+
+
     try:
         driver_class = framework_drivers[FRAMEWORK]
     except KeyError:
