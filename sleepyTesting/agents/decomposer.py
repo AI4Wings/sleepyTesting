@@ -1,5 +1,7 @@
 """Task Decomposition Agent - Breaks down high-level UI tasks into atomic
 operations"""
+import os
+import re
 from typing import List, Optional
 
 from pydantic import BaseModel
@@ -36,32 +38,87 @@ class TaskDecomposer:
             List of UIStep objects representing atomic operations
 
         Example:
-            "在Android手机上发送短信，在iOS手机上查收短信" ->
-            [UIStep(action="send_sms", platform="android", ...),
-             UIStep(action="check_sms", platform="ios", ...)]
+            "在Android设备A123上发送短信，在iOS设备B456上查收短信" ->
+            [UIStep(action="send_sms", platform="android", device_id="A123", ...),
+             UIStep(action="check_sms", platform="ios", device_id="B456", ...)]
         """
         # TODO: Implement full LLM-based task decomposition
-        # For now, implement basic platform/device detection
         steps = []
-
-        # Simple keyword-based platform detection
-        if "Android" in task_description or "安卓" in task_description:
-            # Example: Send SMS step for Android
-            steps.append(UIStep(
-                action="send_sms",
-                platform="android",
-                device_id="default-android",  # Auto-discovered
-                description="Send SMS on Android device"
-            ))
-
-        if "iOS" in task_description or "苹果" in task_description:
-            # Example: Check SMS step for iOS
-            steps.append(UIStep(
-                action="check_sms",
-                platform="ios",
-                device_id="default-ios",  # Could be configured or discovered
-                description="Check SMS on iOS device"
-            ))
+        
+        # Split task into subtasks for multi-device operations
+        subtasks = [s.strip() for s in task_description.split('，')]
+        
+        for subtask in subtasks:
+            # Platform and device detection
+            platform = None
+            device_id = None
+            
+            # Check for Android platform and device
+            if "Android" in subtask or "安卓" in subtask:
+                platform = "android"
+                # Look for device ID patterns
+                if "设备" in subtask:
+                    # Extract ID after "设备"
+                    parts = subtask.split("设备")
+                    if len(parts) > 1:
+                        # Extract alphanumeric ID
+                        import re
+                        matches = re.findall(r'([A-Za-z0-9]+)', parts[1])
+                        if matches:
+                            device_id = matches[0]
+                elif "device" in subtask.lower():
+                    # Extract ID after "device"
+                    parts = subtask.lower().split("device")
+                    if len(parts) > 1:
+                        # Extract alphanumeric ID
+                        import re
+                        matches = re.findall(r'([A-Za-z0-9]+)', parts[1])
+                        if matches:
+                            device_id = matches[0]
+                
+                # Default device ID if none specified
+                device_id = device_id or os.getenv("SLEEPYTESTING_ANDROID_DEVICE", "default-android")
+                
+                # Create Android step
+                steps.append(UIStep(
+                    action="send_sms" if "发送" in subtask else "check_sms",
+                    platform=platform,
+                    device_id=device_id,
+                    description=f"Perform action on Android device {device_id}"
+                ))
+            
+            # Check for iOS platform and device
+            elif "iOS" in subtask or "苹果" in subtask:
+                platform = "ios"
+                # Look for device ID patterns
+                if "设备" in subtask:
+                    parts = subtask.split("设备")
+                    if len(parts) > 1:
+                        # Extract alphanumeric ID
+                        import re
+                        matches = re.findall(r'([A-Za-z0-9]+)', parts[1])
+                        if matches:
+                            device_id = matches[0]
+                elif "device" in subtask.lower():
+                    parts = subtask.lower().split("device")
+                    if len(parts) > 1:
+                        # Extract alphanumeric ID
+                        import re
+                        matches = re.findall(r'([A-Za-z0-9]+)', parts[1])
+                        if matches:
+                            device_id = matches[0]
+                
+                # Default device ID if none specified
+                device_id = device_id or os.getenv("SLEEPYTESTING_IOS_DEVICE", "default-ios")
+                
+                
+                # Create iOS step
+                steps.append(UIStep(
+                    action="check_sms" if "查收" in subtask else "send_sms",
+                    platform=platform,
+                    device_id=device_id,
+                    description=f"Perform action on iOS device {device_id}"
+                ))
 
         return steps
 
