@@ -4,24 +4,25 @@ Controller Agent - Coordinates the execution of UI testing tasks
 from typing import List, Optional
 from .decomposer import UIStep
 from ..assertions import AssertionResult
-from ..core.uiautomator import UIAutomator
+from ..core.driver_interface import BaseDriver
+from ..core.driver_factory import get_driver
 from ..utils.screenshot import ScreenshotManager
 
 class ControllerAgent:
     """Coordinates the execution of UI testing tasks"""
     
-    def __init__(self, decomposer, executor: UIAutomator, supervisor=None, memory=None):
+    def __init__(self, decomposer, executor: Optional[BaseDriver] = None, supervisor=None, memory=None):
         """
         Initialize controller agent
         
         Args:
             decomposer: Task decomposition agent
-            executor: UI automation executor
+            executor: Optional UI automation driver (uses configured driver if None)
             supervisor: Optional supervision agent
             memory: Optional memory agent
         """
         self.decomposer = decomposer
-        self.executor = executor
+        self.executor = executor if executor is not None else get_driver()
         self.supervisor = supervisor
         self.memory = memory
         self.screenshot_manager = ScreenshotManager()
