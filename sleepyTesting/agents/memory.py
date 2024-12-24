@@ -38,17 +38,27 @@ class MemoryAgent:
         if not result.passed:
             return
             
-        step_key = f"{step.action}:{step.element_id or step.coordinates}"
+        # Generate device-aware step key
+        step_key = (
+            f"{step.platform or 'default'}:"
+            f"{step.device_id or 'default'}:"
+            f"{step.action}:{step.element_id or step.coordinates}"
+        )
+        
+        # Store step with device-specific metadata
         self.history[step_key] = {
             "description": step.description,
-            "success_count": self.history.get(step_key, {}).get("success_count", 0) + 1
+            "platform": step.platform,
+            "device_id": step.device_id,
+            "success_count": self.history.get(step_key, {}).get("success_count", 0) + 1,
+            "last_success": True  # Flag for pattern learning
         }
         
         self._save_history()
         
     def optimize_steps(self, steps: List[UIStep]) -> Optional[List[UIStep]]:
         """
-        Optimize steps based on historical patterns
+        Optimize steps based on historical patterns, considering device-specific patterns
         
         Args:
             steps: List of planned UI steps
@@ -56,12 +66,36 @@ class MemoryAgent:
         Returns:
             Optimized list of steps if available
         """
-        # TODO: Implement step optimization logic
-        # This could include:
-        # 1. Removing redundant steps
-        # 2. Replacing with known successful patterns
-        # 3. Adjusting timing based on history
-        return steps
+        optimized_steps = []
+        
+        for step in steps:
+            # Generate device-specific key
+            step_key = (
+                f"{step.platform or 'default'}:"
+                f"{step.device_id or 'default'}:"
+                f"{step.action}:{step.element_id or step.coordinates}"
+            )
+            
+            # Check for device-specific patterns
+            if step_key in self.history:
+                pattern = self.history[step_key]
+                if pattern["success_count"] > 0 and pattern["last_success"]:
+                    # Use the successful pattern
+                    optimized_step = UIStep(
+                        action=step.action,
+                        element_id=step.element_id,
+                        coordinates=step.coordinates,
+                        description=pattern["description"],
+                        platform=pattern["platform"],
+                        device_id=pattern["device_id"]
+                    )
+                    optimized_steps.append(optimized_step)
+                    continue
+                    
+            # If no pattern found or pattern not successful, keep original step
+            optimized_steps.append(step)
+            
+        return optimized_steps
         
     def _save_history(self):
         """Save task history to storage"""
