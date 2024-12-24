@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "sleepyTesting"
+version = "0.1.0"
+description = "A LLM driven UI testing framework using multi-agent to plan and execute mobile UI tasks"
+authors = ["Devin <devin@ai4wings.com>"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+uiautomator2 = "^2.16.0"
+openai = "^1.3.0"
+pydantic = "^2.5.2"
+pytest = "^7.4.3"
+pillow = "^10.1.0"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
