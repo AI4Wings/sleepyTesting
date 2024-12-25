@@ -3,9 +3,10 @@ LLM integration module
 """
 from typing import Any, Dict, Optional
 
+
 class LLMClient:
     """Client for interacting with Language Models"""
-    
+
     def __init__(self, model: str = "gpt-4", api_key: Optional[str] = None):
         """
         Initialize LLM client

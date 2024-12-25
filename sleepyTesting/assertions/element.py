@@ -1,21 +1,21 @@
 """
 Element-level assertions for UI testing
 """
-from typing import Optional
 from .assertions import AssertionType, AssertionResult
+
 
 class ElementAssertion:
     """Handles element-level assertions"""
-    
+
     @staticmethod
     def exists(element_id: str, timeout: int = 10) -> AssertionResult:
         """
         Assert that an element exists in the UI
-        
+
         Args:
             element_id: Identifier for the UI element
             timeout: Maximum time to wait for element
-            
+
         Returns:
             AssertionResult object
         """
@@ -31,10 +31,10 @@ class ElementAssertion:
     def is_visible(element_id: str) -> AssertionResult:
         """
         Assert that an element is visible on screen
-        
+
         Args:
             element_id: Identifier for the UI element
-            
+
         Returns:
             AssertionResult object
         """

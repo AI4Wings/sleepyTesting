@@ -1,13 +1,11 @@
-"""
-Screenshot utilities for UI testing
-"""
-from PIL import Image
+"""Screenshot utilities for UI testing."""
 from datetime import datetime
 import os
 
+
 class ScreenshotManager:
     """Manages screenshot capture and storage"""
-    
+
     def __init__(self, output_dir: str = "screenshots"):
         """
         Initialize screenshot manager
@@ -29,7 +27,8 @@ class ScreenshotManager:
             Path to saved screenshot
         """
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"{name}_{timestamp}.png" if name else f"screenshot_{timestamp}.png"
+        filename = (f"{name}_{timestamp}.png" 
+                   if name else f"screenshot_{timestamp}.png")
         path = os.path.join(self.output_dir, filename)
         # TODO: Implement actual screenshot capture
         return path
