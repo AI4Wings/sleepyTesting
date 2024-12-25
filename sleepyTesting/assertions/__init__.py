@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from enum import Enum
 
 
+
 class AssertionType(Enum):
     """Types of assertions supported"""
     ELEMENT_EXISTS = "element_exists"

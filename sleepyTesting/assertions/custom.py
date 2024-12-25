@@ -10,9 +10,9 @@ class CustomAssertion:
 
     @staticmethod
     def create(
-        check_function: Callable[..., bool],
-        error_message: str,
-        **kwargs
+            check_function: Callable[..., bool],
+            error_message: str,
+            **kwargs
     ) -> AssertionResult:
         """
         Create a custom assertion
@@ -30,9 +30,11 @@ class CustomAssertion:
             return AssertionResult(
                 type=AssertionType.CUSTOM,
                 passed=passed,
-                message=(error_message 
-                        if not passed 
-                        else "Custom assertion passed"),
+                message=(
+                    error_message
+                    if not passed
+                    else "Custom assertion passed"
+                ),
                 actual_value=kwargs.get('actual'),
                 expected_value=kwargs.get('expected')
             )

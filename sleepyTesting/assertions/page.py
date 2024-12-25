@@ -9,8 +9,8 @@ class PageAssertion:
 
     @staticmethod
     def has_functionality(
-        functionality: str,
-        timeout: int = 10
+            functionality: str,
+            timeout: int = 10
     ) -> AssertionResult:
         """
         Assert that a page has specific functionality
@@ -26,13 +26,17 @@ class PageAssertion:
         return AssertionResult(
             type=AssertionType.PAGE_STATE,
             passed=False,
-            message=(f"Page functionality check for '{functionality}' "
-                        "not implemented"),
+            message=(
+                f"Page functionality check for '{functionality}' "
+                "not implemented"
+            ),
             suggestion="Implement functionality verification"
         )
     
     @staticmethod
-    def in_state(expected_state: str) -> AssertionResult:
+    def in_state(
+            expected_state: str
+    ) -> AssertionResult:
         """
         Assert that a page is in an expected state
 
@@ -46,7 +50,9 @@ class PageAssertion:
         return AssertionResult(
             type=AssertionType.PAGE_STATE,
             passed=False,
-            message=(f"Page state verification for '{expected_state}' "
-                        "not implemented"),
+            message=(
+                f"Page state verification for '{expected_state}' "
+                "not implemented"
+            ),
             suggestion="Implement state verification"
         )

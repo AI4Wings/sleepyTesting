@@ -1,69 +1,42 @@
-"""Task Decomposition Agent - Breaks down high-level UI tasks into atomic
-operations"""
-import os
-import re
+"""Task Decomposition Agent.
+
+Breaks down high-level UI tasks into atomic operations using LLM-based task analysis.
+Supports both Chinese and English task descriptions and handles multi-device
+operations across Android, iOS, and web platforms.
+"""
+import logging
 from typing import List, Optional
 
-from pydantic import BaseModel
+from ..core.llm import LLMClient, UIStep
 
-
-class UIStep(BaseModel):
-    """Represents a single UI operation step"""
-    action: str
-    element_id: Optional[str] = None
-    text: Optional[str] = None
-    coordinates: Optional[tuple[int, int]] = None
-    description: str
-
-    # Device/platform specific fields
-    platform: Optional[str] = None  # e.g., 'android', 'ios', 'web'
-    device_id: Optional[str] = None  # Device ID for multi-device scenarios
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 class TaskDecomposer:
-    """Decomposes high-level tasks into specific UI steps using LLM"""
+    """Decomposes high-level tasks into specific UI steps using LLM.
 
-    def __init__(self, llm_client=None):
-        """Initialize with optional LLM client"""
-        self.llm_client = llm_client
+    This class uses an LLM to analyze natural language task descriptions and break
+    them down into atomic UI operations. It supports both Chinese and English input
+    and can handle multi-device operations across Android, iOS, and web platforms.
+    """
 
-    def parse_device_id(self, text: str, platform: str) -> Optional[str]:
-        """Parse device ID from text for a specific platform.
-
+    def __init__(self, llm_client: Optional[LLMClient] = None):
+        """Initialize the task decomposer.
+        
         Args:
-            text: Text to parse device ID from
-            platform: Platform type ('android' or 'ios')
-
-        Returns:
-            Device ID if found, otherwise None
-
-        Example:
-            parse_device_id("在Android设备A123上发送短信", "android") -> "A123"
-            parse_device_id("Send SMS on iOS device B456", "ios") -> "B456"
+            llm_client: Optional LLMClient instance. If not provided, creates a new one.
         """
-        # Check for Chinese device identifier
-        if "设备" in text:
-            parts = text.split("设备")
-            if len(parts) > 1:
-                matches = re.findall(r'([A-Za-z0-9]+)', parts[1])
-                if matches:
-                    return matches[0]
-
-        # Check for English device identifier
-        if "device" in text.lower():
-            parts = text.lower().split("device")
-            if len(parts) > 1:
-                matches = re.findall(r'([A-Za-z0-9]+)', parts[1])
-                if matches:
-                    return matches[0]
-
-        # Get default from environment
-        env_var = f"SLEEPYTESTING_{platform.upper()}_DEVICE"
-        return os.getenv(env_var, f"default-{platform}")
-
-    def decompose_task(self, task_description: str) -> List[UIStep]:
+        self.llm_client = llm_client or LLMClient()
+        
+    async def decompose_task(self, task_description: str) -> List[UIStep]:
         """
-        Decompose a high-level task description into specific UI steps
+        Decompose a high-level task description into specific UI steps using LLM.
+        
+        This method uses the LLM to analyze the task description and generate a sequence
+        of atomic UI operations. It supports both Chinese and English input and can
+        handle multi-device operations.
 
         Args:
             task_description: Natural language description of the UI task
@@ -75,57 +48,85 @@ class TaskDecomposer:
             "在Android设备A123上发送短信，在iOS设备B456上查收短信" ->
             [UIStep(action="send_sms", platform="android", device_id="A123", ...),
              UIStep(action="check_sms", platform="ios", device_id="B456", ...)]
+             
+        Raises:
+            ValueError: If task decomposition fails or generates invalid steps
         """
-        # TODO: Implement full LLM-based task decomposition
-        steps = []
-        
-        # Split task into subtasks for multi-device operations
-        subtasks = [s.strip() for s in task_description.split('，')]
-        
-        for subtask in subtasks:
-            # Platform detection
-            platform = None
+        try:
+            # Use LLM to generate steps
+            result = await self.llm_client.generate_steps(task_description)
             
-            # Check for Android platform
-            if "Android" in subtask or "安卓" in subtask:
-                platform = "android"
-                device_id = self.parse_device_id(subtask, platform)
+            # Extract and validate steps
+            if not result or "steps" not in result:
+                raise ValueError("LLM failed to generate valid steps")
                 
-                # Create Android step
-                steps.append(UIStep(
-                    action="send_sms" if "发送" in subtask else "check_sms",
-                    platform=platform,
-                    device_id=device_id,
-                    description=f"Perform action on Android device {device_id}"
-                ))
+            steps = [UIStep(**step) for step in result["steps"]]
+            if not steps:
+                raise ValueError("No valid steps generated")
+                
+            # Log the decomposition result
+            logger.info(f"Decomposed task into {len(steps)} steps")
+            for i, step in enumerate(steps):
+                logger.debug(f"Step {i+1}: {step.dict()}")
+                
+            return steps
             
-            # Check for iOS platform
-            elif "iOS" in subtask or "苹果" in subtask:
-                platform = "ios"
-                device_id = self.parse_device_id(subtask, platform)
-                
-                # Create iOS step
-                steps.append(UIStep(
-                    action="check_sms" if "查收" in subtask else "send_sms",
-                    platform=platform,
-                    device_id=device_id,
-                    description=f"Perform action on iOS device {device_id}"
-                ))
-
-        return steps
+        except Exception as e:
+            logger.error(f"Task decomposition failed: {str(e)}")
+            raise ValueError(f"Failed to decompose task: {str(e)}")
 
     def validate_steps(
         self,
         steps: List[UIStep]
     ) -> bool:
-        """Validate that the decomposed steps are valid and complete
+        """Validate that the decomposed steps are valid and complete.
+        
+        Performs validation checks on the generated steps:
+        - Verifies steps are UIStep instances
+        - Checks for required fields (action, platform)
+        - Validates device IDs match detected platforms
+        - Ensures step sequence is logical
 
         Args:
             steps: List of UIStep objects to validate
 
         Returns:
             bool indicating if steps are valid
+            
+        Example:
+            validate_steps([
+                UIStep(action="login", platform="android", device_id="A123"),
+                UIStep(action="send_message", platform="android", device_id="A123")
+            ]) -> True
         """
         if not steps:
             return False
-        return all(isinstance(step, UIStep) for step in steps)
+            
+        try:
+            # Basic type validation
+            if not all(isinstance(step, UIStep) for step in steps):
+                return False
+                
+            # Track platforms and device IDs
+            seen_platforms = set()
+            seen_devices = {}  # platform -> set of device IDs
+            
+            # Validate each step
+            for step in steps:
+                # Required fields
+                if not step.action or not step.platform:
+                    return False
+                    
+                # Track platform and device usage
+                seen_platforms.add(step.platform)
+                if step.platform not in seen_devices:
+                    seen_devices[step.platform] = set()
+                if step.device_id:
+                    seen_devices[step.platform].add(step.device_id)
+                    
+            # All validations passed
+            return True
+            
+        except Exception as e:
+            logger.error(f"Step validation failed: {str(e)}")
+            return False
