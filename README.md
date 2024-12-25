@@ -85,10 +85,94 @@ pip install sleepyTesting
 - OpenAI API key (for LLM integration)
 
 ## Configuration
-Set up your environment variables:
+
+### Environment Variables
+
+#### Required Configuration
 ```bash
+# Required: OpenAI API key for LLM integration
 export OPENAI_API_KEY=your_api_key
 ```
+
+#### LLM Configuration
+```bash
+# Optional: LLM model settings (defaults shown)
+export SLEEPYTESTING_LLM_MODEL=gpt-4           # Model to use
+export SLEEPYTESTING_LLM_TEMPERATURE=0.7       # Sampling temperature (0.0-1.0)
+export SLEEPYTESTING_LLM_MAX_TOKENS=2000       # Maximum tokens per request
+
+# Rate Limiting Configuration
+export SLEEPYTESTING_LLM_MAX_RETRIES=3         # Maximum retry attempts
+export SLEEPYTESTING_LLM_MIN_RETRY_WAIT=1.0    # Minimum retry wait time (seconds)
+export SLEEPYTESTING_LLM_MAX_RETRY_WAIT=60.0   # Maximum retry wait time (seconds)
+export SLEEPYTESTING_LLM_MAX_CONCURRENT=5      # Maximum concurrent requests
+export SLEEPYTESTING_LLM_RATE_LIMIT=50         # Maximum requests per period
+export SLEEPYTESTING_LLM_RATE_PERIOD=60        # Rate limit period (seconds)
+```
+
+#### Platform Configuration
+```bash
+# Platform and Framework Selection
+export SLEEPYTESTING_PLATFORM=android          # android/ios/web
+export SLEEPYTESTING_FRAMEWORK=uiautomator2    # uiautomator2/appium/selenium
+
+# Device Configuration
+export SLEEPYTESTING_ANDROID_DEVICE=device_id  # Android device ID
+export SLEEPYTESTING_IOS_DEVICE=device_id      # iOS device ID
+
+# Optional: Device Whitelisting
+export SLEEPYTESTING_ALLOWED_ANDROID_DEVICES=device1,device2
+export SLEEPYTESTING_ALLOWED_IOS_DEVICES=device3,device4
+```
+
+### Configuration Examples
+
+#### Basic Setup
+```bash
+# Minimal configuration for Android testing
+export OPENAI_API_KEY=your_api_key
+export SLEEPYTESTING_PLATFORM=android
+export SLEEPYTESTING_ANDROID_DEVICE=your_device_id
+```
+
+#### Multi-Device Testing
+```bash
+# Configure for both Android and iOS testing
+export OPENAI_API_KEY=your_api_key
+export SLEEPYTESTING_ANDROID_DEVICE=android_device_id
+export SLEEPYTESTING_IOS_DEVICE=ios_device_id
+```
+
+#### Advanced LLM Configuration
+```bash
+# Fine-tune LLM behavior
+export OPENAI_API_KEY=your_api_key
+export SLEEPYTESTING_LLM_MODEL=gpt-4
+export SLEEPYTESTING_LLM_TEMPERATURE=0.5  # Lower temperature for more focused outputs
+export SLEEPYTESTING_LLM_MAX_TOKENS=4000  # Increase token limit for complex tasks
+```
+
+#### Rate Limiting for Production
+```bash
+# Configure rate limiting for production environment
+export SLEEPYTESTING_LLM_MAX_CONCURRENT=3     # Limit concurrent requests
+export SLEEPYTESTING_LLM_RATE_LIMIT=30        # Reduce requests per minute
+export SLEEPYTESTING_LLM_MIN_RETRY_WAIT=2.0   # Increase minimum retry wait time
+```
+
+### Troubleshooting
+
+1. **API Key Issues**
+   - Ensure OPENAI_API_KEY is set and valid
+   - Check API key permissions and quotas
+
+2. **Rate Limiting**
+   - Adjust SLEEPYTESTING_LLM_RATE_LIMIT if hitting API limits
+   - Increase retry wait times for busy environments
+
+3. **Model Selection**
+   - Use GPT-4 for complex tasks requiring better understanding
+   - GPT-3.5-turbo suitable for simpler tasks with faster response
 
 ## Full Framework Usage
 ```python

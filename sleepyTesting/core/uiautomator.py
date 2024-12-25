@@ -16,9 +16,11 @@ class UIAutomatorDriver(BaseDriver):
         Args:
             device_identifier: Optional device serial number
         """
-        self.device = (u2.connect(device_identifier) 
-                      if device_identifier 
-                      else u2.connect())
+        self.device = (
+            u2.connect(device_identifier)
+            if device_identifier
+            else u2.connect()
+        )
 
 
     def click(
