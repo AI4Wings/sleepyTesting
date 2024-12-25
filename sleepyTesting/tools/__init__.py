@@ -8,3 +8,9 @@ into the UI automation workflow. It includes:
 - A registry for managing and discovering tools
 - Built-in tools for common operations
 """
+
+from .weather_tool import WeatherTool
+from .tool_registry import global_tool_registry
+
+# Register built-in tools
+global_tool_registry.register_tool("weather", WeatherTool())
