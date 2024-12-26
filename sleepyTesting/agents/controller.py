@@ -2,13 +2,18 @@
 Controller Agent - Coordinates the execution of UI testing tasks
 """
 import os
-from typing import Dict, List, Optional, Tuple
+import logging
+from typing import Dict, List, Optional, Tuple, Any
 
 from .decomposer import UIStep
 from ..assertions import AssertionResult
 from ..core.driver_interface import BaseDriver
 from ..core.driver_factory import get_driver
 from ..utils.screenshot import ScreenshotManager
+from ..tools.tool_registry import global_tool_registry
+
+# Configure logging
+logger = logging.getLogger(__name__)
 
 
 class ControllerAgent:
@@ -101,14 +106,30 @@ class ControllerAgent:
             # Take before screenshot
             before_screenshot = self.screenshot_manager.capture("before")
 
-            # Get appropriate driver for this step
-            driver = self.get_or_create_driver(step)
+            # Handle tool calls first
+            if step.tool_name:
+                try:
+                    tool_result = global_tool_registry.call_tool(
+                        step.tool_name, 
+                        step.tool_params or {}
+                    )
+                    # Store tool result in step parameters for potential use by subsequent steps
+                    step.parameters["tool_result"] = tool_result
+                    logger.info(f"Tool {step.tool_name} executed successfully: {tool_result}")
+                except Exception as e:
+                    logger.error(f"Tool {step.tool_name} execution failed: {e}")
+                    raise
+            
+            # Handle UI actions
+            else:
+                # Get appropriate driver for this step
+                driver = self.get_or_create_driver(step)
 
-            # Execute step with platform-specific driver
-            if step.coordinates:
-                driver.click(coordinates=step.coordinates)
-            elif step.element_id:
-                driver.click(element_id=step.element_id)
+                # Execute step with platform-specific driver
+                if step.coordinates:
+                    driver.click(coordinates=step.coordinates)
+                elif step.element_id:
+                    driver.click(element_id=step.element_id)
 
             # Take after screenshot
             after_screenshot = self.screenshot_manager.capture("after")

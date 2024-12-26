@@ -29,7 +29,13 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class UIStep(BaseModel):
-    """Model for a single UI automation step."""
+    """
+    Model for a single UI automation step.
+    
+    This model represents either a UI action or an external tool call.
+    For UI actions, the action and target fields are required.
+    For tool calls, the tool_name field indicates which tool to use.
+    """
 
     action: str = Field(
         ...,
@@ -54,6 +60,15 @@ class UIStep(BaseModel):
     description: str = Field(
         ...,
         description="Human readable description of the step"
+    )
+    # External tool integration fields
+    tool_name: Optional[str] = Field(
+        None,
+        description="Name of the external tool to call"
+    )
+    tool_params: Optional[Dict[str, Any]] = Field(
+        None,
+        description="Parameters to pass to the external tool"
     )
 
 class LLMClient:
@@ -209,7 +224,9 @@ class LLMClient:
             '    "platform": string,\n'
             '    "device_id": string or null,\n'
             '    "parameters": object,\n'
-            '    "description": string\n'
+            '    "description": string,\n'
+            '    "tool_name": string or null,\n'
+            '    "tool_params": object or null\n'
             "}"
         )
 
