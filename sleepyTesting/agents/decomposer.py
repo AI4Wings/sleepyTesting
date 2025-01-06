@@ -7,7 +7,8 @@ operations across Android, iOS, and web platforms.
 import logging
 from typing import List, Optional
 
-from ..core.llm import LLMClient, UIStep
+from ..core.llm_provider import ILLMProvider, OpenAIProvider
+from ..core.models import UIStep
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -22,13 +23,13 @@ class TaskDecomposer:
     and can handle multi-device operations across Android, iOS, and web platforms.
     """
 
-    def __init__(self, llm_client: Optional[LLMClient] = None):
+    def __init__(self, llm_provider: Optional[ILLMProvider] = None):
         """Initialize the task decomposer.
         
         Args:
-            llm_client: Optional LLMClient instance. If not provided, creates a new one.
+            llm_provider: Optional ILLMProvider instance. If not provided, creates OpenAI provider.
         """
-        self.llm_client = llm_client or LLMClient()
+        self.llm_provider = llm_provider or OpenAIProvider()
         
     async def decompose_task(self, task_description: str) -> List[UIStep]:
         """
@@ -54,7 +55,7 @@ class TaskDecomposer:
         """
         try:
             # Use LLM to generate steps
-            result = await self.llm_client.generate_steps(task_description)
+            result = await self.llm_provider.generate_steps(task_description)
             
             # Extract and validate steps
             if not result or "steps" not in result:
