@@ -1,13 +1,11 @@
 """
-LLM integration module for generating UI automation steps from natural language
-descriptions. Supports both Chinese and English input, multi-device operations,
-and platform-specific commands.
+OpenAI-specific implementation of the LLM client for generating UI automation steps.
 
-Rate limiting and error handling:
-- Uses exponential backoff for rate limits
-- Handles API timeouts and connection errors
-- Validates responses and retries on invalid formats
-- Implements concurrent request management
+This module provides the concrete implementation of the OpenAI API client with:
+- Rate limiting and concurrent request management
+- Exponential backoff retry logic
+- Response validation and error handling
+- Support for both Chinese and English input
 """
 import os
 import json
@@ -15,7 +13,6 @@ import logging
 import asyncio
 from typing import Any, Dict, List, Optional, Tuple
 import openai
-from pydantic import BaseModel, Field
 from tenacity import (
     retry,
     stop_after_attempt,
@@ -24,52 +21,11 @@ from tenacity import (
     before_sleep_log
 )
 
+from .models import UIStep
+
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
-class UIStep(BaseModel):
-    """
-    Model for a single UI automation step.
-    
-    This model represents either a UI action or an external tool call.
-    For UI actions, the action and target fields are required.
-    For tool calls, the tool_name field indicates which tool to use.
-    """
-
-    action: str = Field(
-        ...,
-        description="The action to perform (click, type, swipe, etc)"
-    )
-    target: str = Field(
-        ...,
-        description="The target element or coordinates"
-    )
-    platform: str = Field(
-        ...,
-        description="Target platform (android/ios/web)"
-    )
-    device_id: Optional[str] = Field(
-        None,
-        description="Specific device ID if needed"
-    )
-    parameters: Dict[str, Any] = Field(
-        default_factory=dict,
-        description="Additional parameters"
-    )
-    description: str = Field(
-        ...,
-        description="Human readable description of the step"
-    )
-    # External tool integration fields
-    tool_name: Optional[str] = Field(
-        None,
-        description="Name of the external tool to call"
-    )
-    tool_params: Optional[Dict[str, Any]] = Field(
-        None,
-        description="Parameters to pass to the external tool"
-    )
 
 class LLMClient:
     """Client for interacting with Language Models to generate UI automation steps"""
