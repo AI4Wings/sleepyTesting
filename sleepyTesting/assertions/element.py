@@ -26,7 +26,7 @@ class ElementAssertion:
             message=f"Element {element_id} existence check not implemented",
             suggestion="Implement element existence check"
         )
-    
+
     @staticmethod
     def is_visible(element_id: str) -> AssertionResult:
         """

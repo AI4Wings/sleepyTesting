@@ -32,7 +32,7 @@ class PageAssertion:
             ),
             suggestion="Implement functionality verification"
         )
-    
+
     @staticmethod
     def in_state(
             expected_state: str

@@ -23,13 +23,15 @@ PLATFORM_DRIVERS: Dict[PlatformType, Dict[FrameworkType, Type[BaseDriver]]] = {
     }
 }
 
+
 def get_driver() -> BaseDriver:
     """
     Get appropriate driver instance based on configured platform and framework
-    
+
     Returns:
-        BaseDriver: Instance of appropriate driver for configured platform/framework
-        
+        BaseDriver: Instance of appropriate driver for configured
+            platform/framework
+
     Raises:
         ValueError: If platform/framework combination is not supported
     """
@@ -38,13 +40,13 @@ def get_driver() -> BaseDriver:
     except KeyError:
         raise ValueError(f"Unsupported platform: {PLATFORM}")
 
-
     try:
         driver_class = framework_drivers[FRAMEWORK]
     except KeyError:
         raise ValueError(
-            f"Unsupported framework '{FRAMEWORK}' for platform '{PLATFORM}'. "
-            f"Supported frameworks: {list(framework_drivers.keys())}"
+            f"Unsupported framework '{FRAMEWORK}' "
+            f"for platform '{PLATFORM}'. Supported frameworks: "
+            f"{list(framework_drivers.keys())}"
         )
-        
+
     return driver_class()

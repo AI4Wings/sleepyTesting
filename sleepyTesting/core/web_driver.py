@@ -15,7 +15,7 @@ class WebDriver(BaseDriver):
             device_identifier: Optional browser identifier/profile
         """
         raise NotImplementedError("Web driver not yet implemented")
-        
+
     def click(
         self,
         element_id: Optional[str] = None,
@@ -29,7 +29,7 @@ class WebDriver(BaseDriver):
             coordinates: Optional (x, y) coordinates
         """
         raise NotImplementedError("Web driver not yet implemented")
-            
+
     def get_element(self, element_id: str) -> Any:
         """
         Get UI element by identifier
@@ -41,7 +41,7 @@ class WebDriver(BaseDriver):
             UI element object
         """
         raise NotImplementedError("Web driver not yet implemented")
-        
+
     def type_text(self, text: str, element_id: Optional[str] = None) -> None:
         """
         Type text into an element or at current focus
@@ -51,7 +51,7 @@ class WebDriver(BaseDriver):
             element_id: Optional element identifier to type into
         """
         raise NotImplementedError("Web driver not yet implemented")
-            
+
     def is_element_present(self, element_id: str) -> bool:
         """
         Check if an element is present on the screen
