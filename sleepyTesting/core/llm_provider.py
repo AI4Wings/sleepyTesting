@@ -8,40 +8,45 @@ maintaining consistent behavior.
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Tuple
 
-from .models import UIStep
-
 
 class ILLMProvider(ABC):
     """Interface defining the contract for LLM providers."""
-    
+
     @abstractmethod
-    async def generate_steps(self, task_description: str) -> Dict[str, Any]:
+    async def generate_steps(
+        self,
+        task_description: str
+    ) -> Dict[str, Any]:
         """
         Generate UI automation steps from a task description.
-        
+
         Args:
             task_description: Natural language description of the task
-            
+
         Returns:
             Dictionary containing:
                 - steps: List[UIStep] - The generated automation steps
-                - devices: List[Tuple[str, str]] - Required devices (platform, id)
+                - devices: List[Tuple[str, str]] - Required devices
+                  (platform, id)
                 - original_task: str - The input task description
-                
+
         Raises:
             ValueError: If response validation fails
             Exception: If LLM API call fails
         """
         pass
-    
+
     @abstractmethod
-    def extract_device_info(self, task: str) -> List[Tuple[str, str]]:
+    def extract_device_info(
+        self,
+        task: str
+    ) -> List[Tuple[str, str]]:
         """
         Extract device IDs and platforms from task description.
-        
+
         Args:
             task: Natural language task description
-            
+
         Returns:
             List of (platform, device_id) tuples
         """
@@ -50,7 +55,7 @@ class ILLMProvider(ABC):
 
 class OpenAIProvider(ILLMProvider):
     """OpenAI-based implementation of the LLM provider interface."""
-    
+
     def __init__(
         self,
         model: str = "gpt-4",
@@ -62,7 +67,7 @@ class OpenAIProvider(ILLMProvider):
     ):
         """
         Initialize OpenAI provider.
-        
+
         Args:
             model: Name of the model to use (default: gpt-4)
             api_key: Optional API key (defaults to env var)
@@ -80,11 +85,11 @@ class OpenAIProvider(ILLMProvider):
             max_retries=max_retries,
             max_concurrent_requests=max_concurrent_requests
         )
-    
+
     async def generate_steps(self, task_description: str) -> Dict[str, Any]:
         """Generate UI steps. See ILLMProvider.generate_steps."""
         return await self._client.generate_steps(task_description)
-    
+
     def extract_device_info(self, task: str) -> List[Tuple[str, str]]:
         """Extract device info. See ILLMProvider.extract_device_info."""
         return self._client._extract_device_info(task)

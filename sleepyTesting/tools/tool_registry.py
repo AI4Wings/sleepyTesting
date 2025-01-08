@@ -66,7 +66,7 @@ class ToolRegistry:
         """
         if name not in self._tools:
             raise ValueError(f"Tool '{name}' not found in registry")
-        
+
         tool = self._tools[name]
         tool.validate_params(params)
         return tool.execute(params)

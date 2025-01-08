@@ -13,30 +13,39 @@ This module provides configuration options for:
 Environment Variables:
     Platform & Framework:
         SLEEPYTESTING_PLATFORM: Platform to use (android/ios/web)
-        SLEEPYTESTING_FRAMEWORK: Framework to use (uiautomator2/appium/selenium)
-        
+        SLEEPYTESTING_FRAMEWORK: Framework to use
+            (uiautomator2/appium/selenium)
+
     Device Configuration:
         SLEEPYTESTING_ANDROID_DEVICE: Android device ID
         SLEEPYTESTING_IOS_DEVICE: iOS device ID
-        SLEEPYTESTING_ALLOWED_ANDROID_DEVICES: Comma-separated list of allowed Android devices
-        SLEEPYTESTING_ALLOWED_IOS_DEVICES: Comma-separated list of allowed iOS devices
-        
+        SLEEPYTESTING_ALLOWED_ANDROID_DEVICES: Comma-separated list of allowed
+            Android devices
+        SLEEPYTESTING_ALLOWED_IOS_DEVICES: Comma-separated list of allowed
+            iOS devices
+
     LLM Configuration:
         OPENAI_API_KEY: OpenAI API key (required)
         SLEEPYTESTING_LLM_MODEL: Model to use (default: gpt-4)
         SLEEPYTESTING_LLM_TEMPERATURE: Sampling temperature (default: 0.7)
-        SLEEPYTESTING_LLM_MAX_TOKENS: Maximum tokens per request (default: 2000)
-        
+        SLEEPYTESTING_LLM_MAX_TOKENS: Maximum tokens per request
+            (default: 2000)
+
     Rate Limiting:
         SLEEPYTESTING_LLM_MAX_RETRIES: Maximum retry attempts (default: 3)
-        SLEEPYTESTING_LLM_MIN_RETRY_WAIT: Minimum retry wait time in seconds (default: 1.0)
-        SLEEPYTESTING_LLM_MAX_RETRY_WAIT: Maximum retry wait time in seconds (default: 60.0)
-        SLEEPYTESTING_LLM_MAX_CONCURRENT: Maximum concurrent requests (default: 5)
+        SLEEPYTESTING_LLM_MIN_RETRY_WAIT: Minimum retry wait time in seconds
+            (default: 1.0)
+        SLEEPYTESTING_LLM_MAX_RETRY_WAIT: Maximum retry wait time in seconds
+            (default: 60.0)
+        SLEEPYTESTING_LLM_MAX_CONCURRENT: Maximum concurrent requests
+            (default: 5)
         SLEEPYTESTING_LLM_RATE_LIMIT: Maximum requests per period (default: 50)
-        SLEEPYTESTING_LLM_RATE_PERIOD: Rate limit period in seconds (default: 60)
-        
+        SLEEPYTESTING_LLM_RATE_PERIOD: Rate limit period in seconds
+            (default: 60)
+
     Other:
-        SLEEPYTESTING_TIMEOUT: Default timeout for UI operations in seconds (default: 30)
+        SLEEPYTESTING_TIMEOUT: Default timeout for UI operations in seconds
+            (default: 30)
 """
 import os
 from typing import List, Literal, Optional
@@ -72,21 +81,23 @@ def validate_platform(platform: str) -> PlatformType:
 def validate_framework(framework: str) -> FrameworkType:
     """
     Validate and return framework type
-    
+
     Args:
         framework: Framework string to validate
-        
+
     Returns:
         Validated framework type
-        
+
     Raises:
         ValueError: If framework is not valid
     """
     if framework not in VALID_FRAMEWORKS:
         raise ValueError(
-            f"Invalid framework: {framework}. Must be one of {VALID_FRAMEWORKS}"
+            f"Invalid framework: {framework}. Must be one of "
+            f"{VALID_FRAMEWORKS}"
         )
     return framework  # type: ignore
+
 
 # Default configuration
 PLATFORM: PlatformType = validate_platform(
@@ -120,7 +131,10 @@ ALLOWED_IOS_DEVICES: List[str] = [
 ]
 
 
-def validate_device_id(device_id: Optional[str], platform: str) -> Optional[str]:
+def validate_device_id(
+    device_id: Optional[str],
+    platform: str
+) -> Optional[str]:
     """Validate device ID for a specific platform.
 
     Args:
@@ -131,7 +145,8 @@ def validate_device_id(device_id: Optional[str], platform: str) -> Optional[str]
         Validated device ID or None if no ID provided
 
     Raises:
-        ValueError: If device ID is not in allowed list when whitelist is configured
+        ValueError: If device ID is not in allowed list when whitelist is
+            configured
     """
     if not device_id:
         return None
@@ -144,11 +159,12 @@ def validate_device_id(device_id: Optional[str], platform: str) -> Optional[str]
 
     if allowed_devices and device_id not in allowed_devices:
         raise ValueError(
-            f"Device ID '{device_id}' not in allowed list for {platform}: "
-            f"{allowed_devices}"
+            f"Device ID '{device_id}' not in allowed list for "
+            f"{platform}: {allowed_devices}"
         )
 
     return device_id
+
 
 # LLM Configuration
 OPENAI_API_KEY: str = os.getenv("OPENAI_API_KEY", "")
@@ -160,7 +176,9 @@ if not OPENAI_API_KEY:
 
 # Model configuration
 LLM_MODEL: str = os.getenv("SLEEPYTESTING_LLM_MODEL", "gpt-4")
-LLM_TEMPERATURE: float = float(os.getenv("SLEEPYTESTING_LLM_TEMPERATURE", "0.7"))
+LLM_TEMPERATURE: float = float(
+    os.getenv("SLEEPYTESTING_LLM_TEMPERATURE", "0.7")
+)
 LLM_MAX_TOKENS: int = int(os.getenv("SLEEPYTESTING_LLM_MAX_TOKENS", "2000"))
 
 # Rate limiting configuration

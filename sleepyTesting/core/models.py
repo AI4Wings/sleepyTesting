@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 class UIStep(BaseModel):
     """
     Model for a single UI automation step.
-    
+
     This model represents either a UI action or an external tool call.
     For UI actions, the action and target fields are required.
     For tool calls, the tool_name field indicates which tool to use.

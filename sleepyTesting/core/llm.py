@@ -1,5 +1,6 @@
 """
-OpenAI-specific implementation of the LLM client for generating UI automation steps.
+OpenAI-specific implementation of the LLM client for generating UI automation
+steps.
 
 This module provides the concrete implementation of the OpenAI API client with:
 - Rate limiting and concurrent request management
@@ -27,15 +28,17 @@ from .models import UIStep
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 class LLMClient:
-    """Client for interacting with Language Models to generate UI automation steps"""
-    
+    """Client for interacting with Language Models to generate UI automation
+    steps"""
+
     # Rate limiting settings
     MAX_RETRIES = 5
     MIN_RETRY_WAIT = 1  # seconds
     MAX_RETRY_WAIT = 60  # seconds
     MAX_CONCURRENT_REQUESTS = 5
-    
+
     # Semaphore for concurrent request limiting
     _request_semaphore: Optional[asyncio.Semaphore] = None
 
@@ -50,7 +53,7 @@ class LLMClient:
     ):
         """
         Initialize LLM client
-        
+
         Args:
             model: Name of the model to use (default: gpt-4)
             api_key: Optional API key for OpenAI (defaults to env var)
@@ -63,47 +66,50 @@ class LLMClient:
         self.temperature = temperature
         self.max_tokens = max_tokens
         self.max_retries = max_retries
-        
+
         # Configure OpenAI
         if api_key:
             openai.api_key = api_key
         else:
             openai.api_key = os.getenv("OPENAI_API_KEY")
             if not openai.api_key:
-                raise ValueError("OpenAI API key not found in environment variables")
-                
+                msg = "OpenAI API key not found in environment variables"
+                raise ValueError(msg)
+
         # Initialize rate limiting
-        if not LLMClient._request_semaphore: 
-            LLMClient._request_semaphore = asyncio.Semaphore(max_concurrent_requests)
+        if not LLMClient._request_semaphore:
+            LLMClient._request_semaphore = asyncio.Semaphore(
+                max_concurrent_requests
+            )
 
     def _extract_device_info(self, task: str) -> List[Tuple[str, str]]:
         """
         Extract device IDs and platforms from task description
-        
+
         Args:
             task: Natural language task description
-            
+
         Returns:
             List of (platform, device_id) tuples
         """
         # Basic pattern matching for common device identifiers
         devices = []
-        
+
         # Look for Android device IDs
         if "android" in task.lower():
-            # Extract potential device IDs near Android mentions
             # For now just assume Android if mentioned
             devices.append(("android", None))
-            
+
         # Look for iOS device IDs
         if "ios" in task.lower() or "iphone" in task.lower():
             devices.append(("ios", None))
-            
+
         # Look for web platform
         if "web" in task.lower() or "browser" in task.lower():
             devices.append(("web", None))
-            
-        return devices or [("android", None)]  # Default to Android if no platform detected
+
+        # Default to Android if no platform detected
+        return devices or [("android", None)]
 
     @retry(
         retry=retry_if_exception_type((
@@ -125,13 +131,13 @@ class LLMClient:
     ) -> Dict[str, Any]:
         """
         Make an OpenAI API call with retry logic
-        
+
         Args:
             messages: List of message dictionaries for the chat completion
-            
+
         Returns:
             OpenAI API response
-            
+
         Raises:
             openai.error.OpenAIError: If all retries fail
         """
@@ -142,31 +148,32 @@ class LLMClient:
                 temperature=self.temperature,
                 max_tokens=self.max_tokens
             )
-    
+
     async def generate_steps(self, task_description: str) -> Dict[str, Any]:
         """
         Generate UI automation steps from task description
-        
+
         Args:
             task_description: Natural language description of the task
-            
+
         Returns:
             Dictionary containing:
-                - steps: List[UIStep] - The generated automation steps
-                - devices: List[Tuple[str, str]] - Required devices (platform, id)
-                - original_task: str - The input task description
-                
+                - steps: List[UIStep] - Generated steps
+                - devices: List[Tuple[str, str]] - Required (platform, id)
+                - original_task: str - Input description
+
         Raises:
             ValueError: If response validation fails
             openai.error.OpenAIError: If API call fails after all retries
         """
         # Extract device information
         devices = self._extract_device_info(task_description)
-        
+
         # Construct system prompt
         system_prompt = (
             "You are a UI automation expert that converts natural language "
-            "task descriptions into precise UI automation steps. Each step should "
+            "task descriptions into precise UI automation steps. Each step "
+            "should "
             "include:\n"
             "- A specific action (click, type, swipe, etc)\n"
             "- The target element or coordinates\n"
@@ -187,12 +194,14 @@ class LLMClient:
         )
 
         # Construct task prompt
-        task_prompt = f"""Please convert this UI automation task into specific steps:
-        Task: {task_description}
-        
-        Required Platforms: {', '.join(d[0] for d in devices)}
-        
-        Output the steps as a JSON array of step objects."""
+        task_prompt = (
+            f"""Please convert this UI automation task into specific steps:
+            Task: {task_description}
+
+            Required Platforms: {', '.join(d[0] for d in devices)}
+
+            Output the steps as a JSON array of step objects."""
+        )
 
         try:
             # Call OpenAI API with retry logic
@@ -200,7 +209,7 @@ class LLMClient:
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": task_prompt}
             ])
-            
+
             # Extract and parse response
             steps_json = response.choices[0].message.content
             try:
@@ -208,7 +217,7 @@ class LLMClient:
             except json.JSONDecodeError as e:
                 logger.error(f"Failed to parse LLM response as JSON: {e}")
                 raise ValueError(f"Invalid JSON in LLM response: {e}")
-                
+
             # Validate and process steps
             try:
                 # Convert to UIStep objects and validate
@@ -218,61 +227,64 @@ class LLMClient:
                         # Basic step validation
                         if not isinstance(step, dict):
                             raise ValueError(f"Step {i} is not a dictionary")
-                        if "action" not in step or "target" not in step:
-                            raise ValueError(f"Step {i} missing required fields")
-                            
+                        required = {"action", "target"}
+                        if not required.issubset(step):
+                            raise ValueError(
+                                f"Step {i} missing required fields"
+                            )
+
                         # Validate platform matches detected devices
                         if "platform" in step:
                             valid_platforms = [d[0] for d in devices]
                             if step["platform"] not in valid_platforms:
                                 raise ValueError(
                                     f"Step {i} platform '{step['platform']}' "
-                                    f"not in detected platforms {valid_platforms}"
+                                    f"not in platforms {valid_platforms}"
                                 )
-                                
+
                         # Validate device ID if present
                         if "device_id" in step and step["device_id"]:
                             device_ids = [d[1] for d in devices if d[1]]
                             if step["device_id"] not in device_ids:
                                 raise ValueError(
-                                    f"Step {i} device_id '{step['device_id']}' "
-                                    f"not in detected devices {device_ids}"
+                                    f"Step {i} device_id '{step['device_id']}'"
+                                    f"not in devices {device_ids}"
                                 )
-                                
+
                         # Convert to UIStep object
                         validated_step = UIStep(**step)
                         validated_steps.append(validated_step)
-                        
+
                     except Exception as e:
                         raise ValueError(f"Invalid step {i}: {str(e)}")
-                        
+
                 # Verify we have at least one step
                 if not validated_steps:
                     raise ValueError("No valid steps generated")
-                    
+
                 # Check step ordering makes sense
                 # For example, ensure login comes before actions requiring auth
-                # This is a basic check - can be enhanced based on domain knowledge
-                actions_requiring_auth = {"send_message", "check_notifications"}
+                # Basic check - enhance with domain knowledge later
+                auth_actions = {"send_message", "check_notifications"}
                 logged_in = False
                 for i, step in enumerate(validated_steps):
                     if step.action == "login":
                         logged_in = True
-                    elif step.action in actions_requiring_auth and not logged_in:
+                    elif step.action in auth_actions and not logged_in:
                         raise ValueError(
-                            f"Step {i} requires login but no login step found before it"
+                            f"Step {i} requires login but no prior login step"
                         )
-                
+
                 return {
                     "steps": [step.dict() for step in validated_steps],
                     "devices": devices,
                     "original_task": task_description
                 }
-                
+
             except Exception as e:
                 logger.error(f"Failed to validate steps: {e}")
                 raise ValueError(f"Invalid step format in LLM response: {e}")
-                
+
         except openai.error.OpenAIError as e:
             logger.error(f"OpenAI API error: {e}")
             raise

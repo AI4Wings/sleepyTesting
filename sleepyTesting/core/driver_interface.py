@@ -12,17 +12,17 @@ class BaseDriver(ABC):
     interface.
     """
 
-
     @abstractmethod
     def connect(self, device_identifier: Optional[str] = None) -> None:
         """
         Connect to a device or browser instance
 
         Args:
-            device_identifier: Optional identifier for the target device/browser
+            device_identifier: Optional identifier for the target
+                device/browser
         """
         pass
-    
+
     @abstractmethod
     def click(
         self,
@@ -37,7 +37,7 @@ class BaseDriver(ABC):
             coordinates: Optional (x, y) coordinates for direct click
         """
         pass
-    
+
     @abstractmethod
     def get_element(self, element_id: str) -> Any:
         """
@@ -50,7 +50,7 @@ class BaseDriver(ABC):
             Platform-specific element object
         """
         pass
-    
+
     @abstractmethod
     def type_text(
         self,
@@ -65,7 +65,7 @@ class BaseDriver(ABC):
             element_id: Optional element identifier to type into
         """
         pass
-    
+
     @abstractmethod
     def is_element_present(self, element_id: str) -> bool:
         """

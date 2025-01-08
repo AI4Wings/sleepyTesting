@@ -3,7 +3,12 @@ Controller Agent - Coordinates the execution of UI testing tasks
 """
 import os
 import logging
-from typing import Dict, List, Optional, Tuple, Any
+from typing import (
+    Dict,
+    List,
+    Optional,
+    Tuple
+)
 
 from .decomposer import UIStep
 from ..assertions import AssertionResult
@@ -103,7 +108,7 @@ class ControllerAgent:
         self.event_bus.publish("OPTIMIZE_STEPS", {
             "steps": steps
         })
-        
+
         results = []
         for step in steps:
             # Take before screenshot
@@ -113,16 +118,21 @@ class ControllerAgent:
             if step.tool_name:
                 try:
                     tool_result = global_tool_registry.call_tool(
-                        step.tool_name, 
+                        step.tool_name,
                         step.tool_params or {}
                     )
-                    # Store tool result in step parameters for potential use by subsequent steps
+                    # Store tool result for use by subsequent steps
                     step.parameters["tool_result"] = tool_result
-                    logger.info(f"Tool {step.tool_name} executed successfully: {tool_result}")
+                    msg = (
+                        f"Tool {step.tool_name} executed successfully: "
+                        f"{tool_result}"
+                    )
+                    logger.info(msg)
                 except Exception as e:
-                    logger.error(f"Tool {step.tool_name} execution failed: {e}")
+                    msg = f"Tool {step.tool_name} execution failed: {e}"
+                    logger.error(msg)
                     raise
-            
+
             # Handle UI actions
             else:
                 # Get appropriate driver for this step
@@ -144,9 +154,10 @@ class ControllerAgent:
                 "after_screenshot": after_screenshot
             }
             self.event_bus.publish("STEP_EXECUTED", step_data)
-            
+
             # Wait for verification result
-            result = AssertionResult(step=step, passed=True)  # Default to passed
+            # Default to passed
+            result = AssertionResult(step=step, passed=True)
             results.append(result)
 
         # Publish task completion event
