@@ -129,14 +129,49 @@ class EventBus(IEventBus):
 
 
 # Common event types used in the framework
+from dataclasses import dataclass
+from datetime import datetime
+
+
+@dataclass
+class AgentEventPayload:
+    """Payload for agent-related events."""
+    agent_id: str
+    timestamp: datetime = datetime.now()
+    message: str = ""
+    error: Exception = None
+
+
 class EventTypes:
     """Constants for common event types used in the framework."""
 
+    # Task-related events
     TASK_STARTED = "task_started"
     TASK_COMPLETED = "task_completed"
     STEP_STARTED = "step_started"
     STEP_COMPLETED = "step_completed"
+    
+    # Assertion events
     ASSERTION_FAILED = "assertion_failed"
     ASSERTION_PASSED = "assertion_passed"
+    
+    # Session events
     SESSION_STARTED = "session_started"
     SESSION_ENDED = "session_ended"
+    
+    # Agent lifecycle events
+    AGENT_INITIALIZED = "agent_initialized"
+    AGENT_READY = "agent_ready"
+    AGENT_BUSY = "agent_busy"
+    AGENT_ERROR = "agent_error"
+    AGENT_RECOVERED = "agent_recovered"
+    AGENT_SHUTDOWN = "agent_shutdown"
+    
+    # Health monitoring events
+    HEALTH_CHECK = "health_check"
+    HEALTH_CHECK_FAILED = "health_check_failed"
+    HEALTH_CHECK_PASSED = "health_check_passed"
+    
+    # Memory events
+    MEMORY_UPDATED = "memory_updated"
+    MEMORY_CLEARED = "memory_cleared"

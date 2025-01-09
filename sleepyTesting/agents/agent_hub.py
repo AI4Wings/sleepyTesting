@@ -10,6 +10,8 @@ from enum import Enum
 from dataclasses import dataclass
 from datetime import datetime
 
+from ..core.event_bus import EventTypes, Event, AgentEventPayload
+
 from .controller import ControllerAgent
 from .decomposer import TaskDecomposer
 from .supervisor import SupervisorAgent
@@ -167,17 +169,21 @@ class AgentHub:
     def _setup_event_subscriptions(self) -> None:
         """Set up event subscriptions for all managed agents."""
         # Core workflow events
-        self.event_bus.subscribe("TASK_STARTED", self._on_task_started)
-        self.event_bus.subscribe("TASK_COMPLETED", self._on_task_completed)
-        self.event_bus.subscribe("STEP_EXECUTED", self._on_step_executed)
-        self.event_bus.subscribe("ERROR_OCCURRED", self._on_error)
+        self.event_bus.subscribe(EventTypes.TASK_STARTED, self._on_task_started)
+        self.event_bus.subscribe(EventTypes.TASK_COMPLETED, self._on_task_completed)
+        self.event_bus.subscribe(EventTypes.STEP_COMPLETED, self._on_step_executed)
+        self.event_bus.subscribe(EventTypes.AGENT_ERROR, self._on_error)
 
         # Memory-related events
-        self.event_bus.subscribe("MEMORY_UPDATED", self._on_memory_updated)
+        self.event_bus.subscribe(EventTypes.MEMORY_UPDATED, self._on_memory_updated)
 
         # Agent lifecycle events
-        self.event_bus.subscribe("AGENT_ERROR", self._on_agent_error)
-        self.event_bus.subscribe("AGENT_RECOVERED", self._on_agent_recovered)
+        self.event_bus.subscribe(EventTypes.AGENT_ERROR, self._on_agent_error)
+        self.event_bus.subscribe(EventTypes.AGENT_RECOVERED, self._on_agent_recovered)
+        self.event_bus.subscribe(EventTypes.HEALTH_CHECK, self._handle_health_check)
+        
+        # Start health monitoring
+        self._start_health_monitoring()
 
     def _on_task_started(self, payload: Dict[str, Any]) -> None:
         """Handle task start event."""
@@ -291,7 +297,7 @@ class AgentHub:
         """Start the health monitoring system for all agents."""
         # Subscribe to health check events
         self.event_bus.subscribe(
-            "HEALTH_CHECK",
+            EventTypes.HEALTH_CHECK,
             self._handle_health_check
         )
         
@@ -316,17 +322,15 @@ class AgentHub:
 
     def _publish_health_check(self) -> None:
         """Publish a health check event."""
-        self.event_bus.publish("HEALTH_CHECK", {
-            "timestamp": datetime.now().isoformat(),
-            "agents": {
-                agent_id: {
-                    "state": info.state.value,
-                    "error_count": info.error_count,
-                    "retry_count": info.retry_count
-                }
-                for agent_id, info in self.agent_info.items()
-            }
-        })
+        # Create health check payload with system state
+        payload = AgentEventPayload(
+            agent_id="system",
+            timestamp=datetime.now(),
+            message="System-wide health check",
+        )
+        
+        # Publish health check event
+        self.event_bus.publish(Event(EventTypes.HEALTH_CHECK, payload))
 
     def _on_agent_error(self, payload: Dict[str, Any]) -> None:
         """
@@ -374,11 +378,13 @@ class AgentHub:
         if session_id:
             self.session_manager.set_current_session(session_id)
 
-        # Publish task start event
-        self.event_bus.publish("TASK_STARTED", {
-            "session_id": session_id,
-            "task_description": task_description
-        })
+        # Create and publish task start event
+        start_payload = AgentEventPayload(
+            agent_id="system",
+            timestamp=datetime.now(),
+            message=f"Starting task execution: {task_description}"
+        )
+        self.event_bus.publish(Event(EventTypes.TASK_STARTED, start_payload))
 
         try:
             # Decompose task into steps
@@ -387,20 +393,23 @@ class AgentHub:
             # Execute steps through controller
             result = await self.controller.execute_steps(steps)
 
-            # Publish task completion event
-            self.event_bus.publish("TASK_COMPLETED", {
-                "task_id": result.get("task_id"),
-                "success": True,
-                "result": result
-            })
+            # Create and publish task completion event
+            complete_payload = AgentEventPayload(
+                agent_id="system",
+                timestamp=datetime.now(),
+                message=f"Task completed successfully: {task_description}"
+            )
+            self.event_bus.publish(Event(EventTypes.TASK_COMPLETED, complete_payload))
 
             return result
 
         except Exception as e:
-            # Publish error event
-            self.event_bus.publish("ERROR_OCCURRED", {
-                "message": str(e),
-                "source": "agent_hub",
-                "task_description": task_description
-            })
+            # Create and publish error event
+            error_payload = AgentEventPayload(
+                agent_id="system",
+                timestamp=datetime.now(),
+                message=f"Error in task execution: {str(e)}",
+                error=e
+            )
+            self.event_bus.publish(Event(EventTypes.AGENT_ERROR, error_payload))
             raise
